@@ -1,4 +1,5 @@
-name: Build APK
+name: Build APK (self-contained)
+
 on:
   push:
     branches: [ main ]
@@ -7,25 +8,62 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
+        id: setup-java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Install SDK tools
+      - name: Install basic tools
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          sudo apt-get update -y
+          sudo apt-get install -y unzip curl
 
+      - name: Install Android command-line tools
+        run: |
+          export ANDROID_SDK_ROOT="$HOME/android-sdk"
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          cd "$HOME"
+          curl -sS -o commandlinetools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          unzip -q commandlinetools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
+          # Move extracted 'cmdline-tools' content into a 'latest' folder expected by sdkmanager
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/"* "$ANDROID_SDK_ROOT/cmdline-tools/latest/" || true
+          rm -f commandlinetools.zip
 
+      - name: Expose Android SDK to environment
+        run: |
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
-      - name: Build debug apk
-        run: gradle assembleDebug --no-daemon
-      - name: Upload artifact
+      - name: Accept licenses and install SDK packages
+        run: |
+          yes | sdkmanager --sdk_root="$HOME/android-sdk" --licenses || true
+          sdkmanager --sdk_root="$HOME/android-sdk" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+      - name: Make gradlew executable (if present)
+        run: chmod +x ./gradlew || true
+
+      - name: Build debug APK
+        env:
+          JAVA_HOME: ${{ steps.setup-java.outputs.java-home }}
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug --no-daemon
+          else
+            gradle assembleDebug --no-daemon
+          fi
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
