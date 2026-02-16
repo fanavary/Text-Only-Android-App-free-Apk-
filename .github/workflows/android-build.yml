@@ -22,8 +22,7 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Make wrapper executable (if present)
-        run: chmod +x ./gradlew || true
+
 
       - name: Build debug apk
         run: gradle assembleDebug --no-daemon
