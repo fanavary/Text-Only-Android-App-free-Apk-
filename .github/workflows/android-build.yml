@@ -50,7 +50,12 @@ jobs:
           sdkmanager --sdk_root="$HOME/android-sdk"
           sdkmanager --sdk_root="platform-tools" "platforms;android-33"
           sdkmanager --sdk_root="build-tools;33.0.2"
-
+        with:
+          packages: |
+            platforms;android-33
+            build-tools;33.0.2
+            platform-tools
+            
       - name: Setup Gradle CLI (pin to 8.4)
         uses: gradle/actions/setup-gradle@v3
         with:
