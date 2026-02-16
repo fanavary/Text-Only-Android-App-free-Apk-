@@ -4,16 +4,19 @@ plugins {
 }
 
 android {
-    namespace "com.example.lightbrowser"
-    compileSdk 33
-
-    defaultConfig {
-        applicationId "com.example.lightbrowser"
-        minSdk 21
-        targetSdk 33
-        versionCode 1
-        versionName "1.0"
+    // ... other config ...
+    buildTypes {
+        debug {
+            minifyEnabled false
+            // no signing config needed for debug
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // keep default release config (not signed in this repo)
+        }
     }
+}
 
     buildTypes {
         debug {
