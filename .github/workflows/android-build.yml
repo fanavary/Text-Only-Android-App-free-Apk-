@@ -1,4 +1,4 @@
-name: Build APK (self-contained)
+name: Build APK (force Gradle 8.4)
 
 on:
   push:
@@ -33,7 +33,6 @@ jobs:
           cd "$HOME"
           curl -sS -o commandlinetools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
           unzip -q commandlinetools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
-          # Move extracted 'cmdline-tools' content into a 'latest' folder expected by sdkmanager
           mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
           mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/"* "$ANDROID_SDK_ROOT/cmdline-tools/latest/" || true
           rm -f commandlinetools.zip
@@ -45,25 +44,28 @@ jobs:
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
-      - name: Accept licenses and install SDK packages
+      - name: Accept licenses & install SDK packages
         run: |
           yes | sdkmanager --sdk_root="$HOME/android-sdk" --licenses || true
-          sdkmanager --sdk_root="$HOME/android-sdk" "platform-tools"
-          sdkmanager --sdk_root="platforms;android-33"
+          sdkmanager --sdk_root="$HOME/android-sdk"
+          sdkmanager --sdk_root="platform-tools" "platforms;android-33"
           sdkmanager --sdk_root="build-tools;33.0.2"
+
+      - name: Setup Gradle CLI (pin to 8.4)
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
 
       - name: Make gradlew executable (if present)
         run: chmod +x ./gradlew || true
 
-      - name: Build debug APK
+      - name: Build debug APK (uses pinned Gradle 8.4)
         env:
           JAVA_HOME: ${{ steps.setup-java.outputs.java-home }}
         run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug --no-daemon
-          else
-            gradle assembleDebug --no-daemon
-          fi
+          # Use Gradle CLI 8.4 installed by setup-gradle
+          gradle --version
+          gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
