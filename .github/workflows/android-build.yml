@@ -26,13 +26,7 @@ jobs:
         run: chmod +x ./gradlew || true
 
       - name: Build debug apk
-        run: |
-          if [ -f ./gradlew ]; then
-            ./gradlew assembleDebug --no-daemon
-          else
-            gradle assembleDebug --no-daemon
-          fi
-
+        run: gradle assembleDebug --no-daemon
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
