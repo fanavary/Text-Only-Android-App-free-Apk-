@@ -8,28 +8,40 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: '17'
 
       - name: Install Android SDK components
-        uses: android-actions/setup-android@v2
+        uses: android-actions/setup-android@v3
         with:
-          api-level: 34
-          build-tools: '34.0.0'
+          packages: |
+            platforms;android-33
+            build-tools;33.0.2
+            platform-tools
 
-      - name: Install Gradle
-        uses: gradle/gradle-build-action@v3
+      - name: Setup Gradle CLI
+        uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.4'
 
+      - name: Verify sdkmanager and java
+        run: |
+          sdkmanager --version || true
+          java -version
+
       - name: Build debug APK
-        run: gradle assembleDebug
+        run: gradle assembleDebug --no-daemon
+        env:
+          JAVA_HOME: ${{ steps.setup-java.outputs.java-home }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
