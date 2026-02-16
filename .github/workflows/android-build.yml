@@ -48,7 +48,9 @@ jobs:
       - name: Accept licenses and install SDK packages
         run: |
           yes | sdkmanager --sdk_root="$HOME/android-sdk" --licenses || true
-          sdkmanager --sdk_root="$HOME/android-sdk" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          sdkmanager --sdk_root="$HOME/android-sdk" "platform-tools"
+          sdkmanager --sdk_root="platforms;android-33"
+          sdkmanager --sdk_root="build-tools;33.0.2"
 
       - name: Make gradlew executable (if present)
         run: chmod +x ./gradlew || true
